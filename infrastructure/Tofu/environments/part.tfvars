@@ -89,7 +89,7 @@ irsa_service_accounts = {
   external-secrets = {
     namespace       = "external-secrets"
     service_account = "external-secrets-sa"
-    policy_json = <<EOT
+    policy_json     = <<EOT
 {
   "Version": "2012-10-17",
   "Statement": [
