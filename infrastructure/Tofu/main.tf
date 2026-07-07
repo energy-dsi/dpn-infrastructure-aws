@@ -42,6 +42,8 @@ module "networking" {
   azs                                  = var.azs
   subnet_cidrs                         = var.subnet_cidrs
   allowed_egress_fqdns                 = var.allowed_egress_fqdns
+  enable_vpc_flow_logs                 = true
+  enable_firewall_logging              = true
   enable_vpc_endpoints                 = var.enable_vpc_endpoints
   enable_restrictive_endpoint_policies = var.enable_restrictive_endpoint_policies
   vpc_flow_log_group_arn               = module.observability.vpc_flow_log_group_arn
@@ -113,6 +115,7 @@ module "ingress" {
   blocked_country_codes          = var.blocked_country_codes
   waf_allowed_http_methods       = var.waf_allowed_http_methods
   waf_blocked_user_agent_regexes = var.waf_blocked_user_agent_regexes
+  enable_waf_logging             = true
   alb_logs_bucket_name           = module.observability.alb_logs_bucket_name
   waf_log_group_arn              = module.observability.waf_log_group_arn
   tags                           = var.tags

@@ -369,16 +369,21 @@ tofu apply -var-file=environments/part.tfvars
 #### 2.5 Save Bootstrap Outputs
 
 ```bash
-# Save outputs for next phase
-tofu output -raw backend_config > backend_config.txt
+# Save outputs for next phase. backend_config is an object output,
+# so use -json (the -raw option only supports strings/numbers/booleans).
+tofu output -json backend_config > backend_config.json
 
 # Display backend config
-cat backend_config.txt
-# Output:
-#   bucket="dpn-state-..."
-#   dynamodb_table="dpn-lock-..."
-#   key="part"
-#   region="eu-west-2"
+cat backend_config.json
+# Output (JSON):
+#   {
+#     "bucket": "dpn-state-...",
+#     "dynamodb_table": "dpn-lock-...",
+#     "key": "part/terraform.tfstate",
+#     "region": "eu-west-2",
+#     "encrypt": true,
+#     "kms_key_id": "..."
+#   }
 ```
 
 #### 2.6 (Optional) Bootstrap Validation
@@ -409,12 +414,11 @@ pwd    # Verify: .../infrastructure/Tofu
 
 ```bash
 # Read bootstrap outputs
-cat bootstrap/backend_config.txt
+cat bootstrap/backend_config.json
 
-# Extract values (or copy from bootstrap output)
-# Example:
-export BUCKET="dpn-state-123456789012"
-export TABLE="dpn-lock-123456789012"
+# Extract values from the JSON output (requires jq)
+export BUCKET=$(jq -r '.bucket' bootstrap/backend_config.json)
+export TABLE=$(jq -r '.dynamodb_table' bootstrap/backend_config.json)
 
 # Initialize with remote backend
 tofu init \

@@ -41,6 +41,18 @@ variable "allowed_egress_fqdns" {
   default     = []
 }
 
+variable "enable_vpc_flow_logs" {
+  description = "Create VPC flow log resources"
+  type        = bool
+  default     = true
+}
+
+variable "enable_firewall_logging" {
+  description = "Create Network Firewall logging configuration"
+  type        = bool
+  default     = true
+}
+
 variable "firewall_flow_log_group_arn" {
   description = "CloudWatch log group ARN for firewall flow logs"
   type        = string

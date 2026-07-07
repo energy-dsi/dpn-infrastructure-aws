@@ -35,6 +35,11 @@ variable "enable_waf" {
   default = true
 }
 
+variable "enable_waf_logging" {
+  type    = bool
+  default = true
+}
+
 variable "waf_rate_limit" {
   type    = number
   default = 2000

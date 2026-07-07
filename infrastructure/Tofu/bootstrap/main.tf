@@ -29,8 +29,8 @@ provider "aws" {
       Environment = var.environment
       Project     = var.project_name
       ManagedBy   = "OpenTofu"
-      CreatedAt   = timestamp()
-      Bootstrap   = true
+      CreatedAt   = "bootstrap"
+      Bootstrap   = "true"
     }
   }
 }
@@ -282,7 +282,7 @@ resource "aws_cloudtrail" "tfstate" {
 
     data_resource {
       type   = "AWS::DynamoDB::Table"
-      values = ["arn:aws:dynamodb:${var.aws_region}:*:table/${var.tfstate_dynamodb_table}"]
+      values = [aws_dynamodb_table.tfstate_lock.arn]
     }
   }
 }

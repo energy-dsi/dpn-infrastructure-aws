@@ -89,38 +89,20 @@ irsa_service_accounts = {
   external-secrets = {
     namespace       = "external-secrets"
     service_account = "external-secrets-sa"
-    policy_json = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect   = "Allow"
-          Action   = ["secretsmanager:GetSecretValue"]
-          Resource = "arn:aws:secretsmanager:*:*:secret:dpn/prod/*"
-        }
-      ]
-    })
+    policy_json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:dpn/prod/*"
+    }
+  ]
+}
+EOT
   }
 }
 
 # Baseline AWS Config Rules (for gradual compliance enablement)
 # These are example AWS managed rules in audit (non-enforcing) mode. Expand as needed.
-aws_config_baseline = {
-  "restricted-ssh" = {
-    description = "Checks whether security groups allow unrestricted SSH access."
-    rule_identifier = "INCOMING_SSH_DISABLED"
-    input_parameters = {}
-    compliance_mode = "Audit"
-  }
-  "s3-bucket-public-read-prohibited" = {
-    description = "Checks that S3 buckets do not allow public read access."
-    rule_identifier = "S3_BUCKET_PUBLIC_READ_PROHIBITED"
-    input_parameters = {}
-    compliance_mode = "Audit"
-  }
-  "rds-storage-encrypted" = {
-    description = "Checks whether storage encryption is enabled for your RDS DB instances."
-    rule_identifier = "RDS_STORAGE_ENCRYPTED"
-    input_parameters = {}
-    compliance_mode = "Audit"
-  }
-}
