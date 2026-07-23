@@ -2,24 +2,24 @@ project_name = "dpn"
 environment  = "prod"
 aws_region   = "eu-west-2"
 
-cluster_name       = "eks-dpn-prod-eu-west-2"
+cluster_name       = "<CLUSTER-NAME>
 kubernetes_version = "1.33"
 
-vpc_cidr = "10.120.0.0/16"
+vpc_cidr = "<VPC-CIDR>"  # example: "10.1.2.3/24"
 azs      = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
 
 subnet_cidrs = {
-  public = ["10.120.0.0/24", "10.120.1.0/24", "10.120.2.0/24"]
-  app    = ["10.120.10.0/24", "10.120.11.0/24", "10.120.12.0/24"]
-  data   = ["10.120.20.0/24", "10.120.21.0/24", "10.120.22.0/24"]
-  fw     = ["10.120.30.0/28", "10.120.30.16/28", "10.120.30.32/28"]
-  tgw    = ["10.120.40.0/28", "10.120.40.16/28", "10.120.40.32/28"]
-  mgmt   = ["10.120.50.0/24", "10.120.51.0/24", "10.120.52.0/24"]
+  public = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] # example: ["10.1.2.3/28", "10.1.2.64/28, "10.1.2.128/28"]
+  app    = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] 
+  data   = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] 
+  fw     = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] 
+  tgw    = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] 
+  mgmt   = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>", "<CIDR-ZONE-C>"] 
 }
 
-domain_name      = "dpn.example.com"
+domain_name      = "<DOMAIN-NAME>"
 ingress_hostname = "dpn"
-route53_zone_id  = "Z000000000EXAMPLE"
+route53_zone_id  = "<ROUTE53-ZONE-ID>"
 
 endpoint_private_access = true
 endpoint_public_access  = false

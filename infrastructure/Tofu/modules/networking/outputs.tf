@@ -1,6 +1,6 @@
 output "vpc_id" {
   description = "VPC id"
-  value       = aws_vpc.this.id
+  value       = local.vpc_id
 }
 
 output "public_subnet_ids" {
@@ -14,18 +14,18 @@ output "application_subnet_ids" {
 }
 
 output "data_subnet_ids" {
-  description = "Data subnet ids"
-  value       = [for az in var.azs : aws_subnet.data[az].id]
+  description = "Data subnet ids. Empty in the minimal EKS-first profile."
+  value       = []
 }
 
 output "management_subnet_ids" {
-  description = "Management subnet ids"
-  value       = [for az in var.azs : aws_subnet.mgmt[az].id]
+  description = "Management subnet ids. Empty in the minimal EKS-first profile."
+  value       = []
 }
 
 output "alb_security_group_id" {
-  description = "ALB security group id"
-  value       = aws_security_group.alb.id
+  description = "ALB security group id. Null in the minimal EKS-first profile."
+  value       = null
 }
 
 output "node_security_group_id" {
@@ -34,31 +34,40 @@ output "node_security_group_id" {
 }
 
 output "data_security_group_id" {
-  description = "Data tier security group id"
-  value       = aws_security_group.data.id
+  description = "Data security group id. Null in the minimal EKS-first profile."
+  value       = null
 }
 
 output "management_security_group_id" {
-  description = "Management tier security group id"
-  value       = aws_security_group.mgmt.id
+  description = "Management security group id. Null in the minimal EKS-first profile."
+  value       = null
 }
 
 output "transit_gateway_id" {
-  description = "Transit gateway id"
-  value       = aws_ec2_transit_gateway.this.id
+  description = "Transit Gateway id. Null in the minimal EKS-first profile."
+  value       = null
 }
 
 output "network_firewall_arn" {
-  description = "Network firewall arn"
-  value       = aws_networkfirewall_firewall.this.arn
+  description = "Network Firewall ARN. Null in the minimal EKS-first profile."
+  value       = null
 }
 
 output "interface_vpc_endpoint_ids" {
-  description = "Interface VPC endpoint ids keyed by service"
-  value       = { for k, v in aws_vpc_endpoint.interface : k => v.id }
+  description = "Interface VPC endpoint ids. Empty in the minimal EKS-first profile."
+  value       = {}
 }
 
 output "s3_gateway_vpc_endpoint_id" {
-  description = "S3 gateway VPC endpoint id"
-  value       = try(aws_vpc_endpoint.s3_gateway[0].id, null)
+  description = "S3 gateway VPC endpoint id. Null in the minimal EKS-first profile."
+  value       = null
+}
+output "nlb_eip_allocation_ids" {
+  description = "Elastic IP allocation IDs for internet-facing NLBs."
+  value       = [for eip in aws_eip.nlb : eip.id]
+}
+
+output "nlb_public_ips" {
+  description = "Static public IP addresses for internet-facing NLBs."
+  value       = [for eip in aws_eip.nlb : eip.public_ip]
 }

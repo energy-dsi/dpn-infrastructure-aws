@@ -76,3 +76,56 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+
+variable "enable_vpc_flow_logs" {
+  description = "Enable VPC flow logging resources. Uses explicit boolean to avoid unknown count during planning."
+  type        = bool
+  default     = true
+}
+
+variable "enable_network_firewall_logging" {
+  description = "Enable AWS Network Firewall logging configuration. Uses explicit boolean to avoid unknown count during planning."
+  type        = bool
+  default     = true
+}
+variable "use_existing_vpc" {
+  description = "Use an existing VPC instead of creating a new one."
+  type        = bool
+  default     = false
+}
+
+variable "existing_vpc_id" {
+  description = "Existing VPC ID to use when use_existing_vpc is true."
+  type        = string
+  default     = null
+}
+
+variable "create_igw" {
+  description = "Create and attach an Internet Gateway to the selected VPC."
+  type        = bool
+  default     = true
+}
+
+variable "existing_internet_gateway_id" {
+  description = "Existing Internet Gateway ID to use when create_igw is false."
+  type        = string
+  default     = null
+}
+
+variable "create_nat" {
+  description = "Create NAT Gateways for private/application subnet egress."
+  type        = bool
+  default     = true
+}
+
+variable "transit_gateway_id" {
+  description = "Transit Gateway ID used for private/application subnet egress when create_nat is false."
+  type        = string
+  default     = null
+}
+variable "create_nlb_eips" {
+  description = "Create static Elastic IPs for internet-facing NLBs."
+  type        = bool
+  default     = false
+}

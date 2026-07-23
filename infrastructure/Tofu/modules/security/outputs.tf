@@ -17,3 +17,7 @@ output "eks_node_role_arn" {
   description = "IAM role arn used by EKS worker nodes"
   value       = aws_iam_role.eks_node.arn
 }
+
+output "guardduty_findings_topic_arn" {
+  value = aws_sns_topic.guardduty_findings.arn
+}

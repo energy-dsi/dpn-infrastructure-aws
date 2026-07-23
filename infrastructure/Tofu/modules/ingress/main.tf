@@ -75,13 +75,13 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "validation" {
-  for_each = {
+  for_each = var.route53_zone_id != "REPLACE_WITH_DEV_ROUTE53_ZONE_ID" ? {
     for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
     }
-  }
+  } : {}
 
   zone_id = var.route53_zone_id
   name    = each.value.name
@@ -365,7 +365,7 @@ resource "aws_wafv2_web_acl_association" "this" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "this" {
-  count = var.enable_waf && var.waf_log_group_arn != null && var.waf_log_group_arn != "" ? 1 : 0
+  count = var.enable_waf && var.enable_waf_logging ? 1 : 0
 
   resource_arn            = aws_wafv2_web_acl.this[0].arn
   log_destination_configs = [var.waf_log_group_arn]

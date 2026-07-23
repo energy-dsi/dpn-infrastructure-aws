@@ -39,11 +39,10 @@ terraform {
 #
 # terraform {
 #   backend "s3" {
-#     bucket         = "dpn-tfstate-bootstrap"
-#     key            = "bootstrap/terraform.tfstate"
-#     region         = "eu-west-2"
-#     dynamodb_table = "dpn-tfstate-lock"
-#     encrypt        = true
+#   bucket         = "<YOUR-TF-STATE-BUCKET>"
+#   key            = "<YOUR-TF-STATE-FILE-IN-BUCKET>"
+#   region         = "eu-west-2"
+#   dynamodb_table = "<YOUR-DYNAMODB-TABLE-WITH-TF-STATE>"
+#   encrypt        = true
 #   }
 # }
-

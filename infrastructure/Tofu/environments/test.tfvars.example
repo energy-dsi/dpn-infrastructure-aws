@@ -1,0 +1,183 @@
+# AWS Account ID: 794386801111 (dpn-test-01)
+project_name = "dpn"
+environment  = "test"
+aws_region   = "eu-west-2"
+
+cluster_name       = "eks-dpn-test-eu-west-2"
+kubernetes_version = "1.35"
+
+vpc_cidr = "<VPC-CIDR>"  # example: "10.1.2.3/24"
+azs      = ["eu-west-2a", "eu-west-2b"]
+
+subnet_cidrs = {
+  tgw    = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"] # example: ["10.1.2.3/28", "10.1.2.128/28"]
+  fw     = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"]
+  public = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"]
+  mgmt   = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"]
+  app    = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"]
+  data   = ["<CIDR-ZONE-A>", "<CIDR-ZONE-B>"]
+}
+
+# Existing VPC deployment
+use_existing_vpc = true
+existing_vpc_id  = "<VPC-ID>"
+
+create_igw      = true
+create_nat      = false
+create_nlb_eips = true
+
+transit_gateway_id = "<TGW-ID>"
+
+application_bucket_name = "<APP-BUCKET>"
+
+domain_name      = "<DOMAIN-NAME>"
+ingress_hostname = "<INGRESS-HOSNTAME>"
+route53_zone_id  = "<REPLACE_WITH_DEV_ROUTE53_ZONE_ID>"
+
+endpoint_private_access = true
+endpoint_public_access  = false
+
+eks_authentication_mode                         = "API_AND_CONFIG_MAP"
+eks_bootstrap_cluster_creator_admin_permissions = true
+
+enable_cloudwatch_observability = true
+enable_efs_csi_driver           = true
+
+
+eks_access_entries = {
+  admin = {
+    principal_arn     = "arn:aws:iam::794386801111:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_EKSAdmin_cb4105c2e6ada4c4"
+    policy_arn        = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    access_scope_type = "cluster"
+  }
+
+  devops = {
+    principal_arn     = "arn:aws:iam::794386801111:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_EKSDevOps_94e47927cf070b06"
+    policy_arn        = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+    access_scope_type = "cluster"
+  }
+
+  mgmt_host = {
+    principal_arn     = "arn:aws:iam::794386801111:role/dpn-mgmt-host-test"
+    policy_arn        = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    access_scope_type = "cluster"
+  }
+
+  developer = {
+    principal_arn     = "arn:aws:iam::794386801111:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_EKSDeveloper_01b7bf7f379f3051"
+    policy_arn        = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+    access_scope_type = "namespace"
+    namespaces        = ["applications"]
+  }
+}
+
+system_node_group_instance_types = ["t3.medium"]
+system_node_group_desired_size   = 1
+system_node_group_min_size       = 1
+system_node_group_max_size       = 2
+
+workload_node_group_instance_types = ["t3.large"]
+workload_node_group_desired_size   = 4
+workload_node_group_min_size       = 2
+workload_node_group_max_size       = 6
+
+db_name                  = "dpn"
+db_engine_version        = "16.3"
+db_instance_class        = "db.t4g.medium"
+db_allocated_storage     = 30
+db_max_allocated_storage = 100
+db_admin_username        = "dpnadmin"
+backup_retention_days    = 7
+
+enable_waf     = false
+waf_rate_limit = 2000
+
+blocked_country_codes = [
+  "KP",
+  "IR",
+  "SY"
+]
+
+waf_allowed_http_methods = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS"
+]
+
+waf_blocked_user_agent_regexes = [
+  "(?i).*sqlmap.*",
+  "(?i).*nikto.*",
+  "(?i).*nmap.*",
+  "(?i).*masscan.*",
+  "(?i).*acunetix.*",
+  "(?i).*dirbuster.*",
+  "(?i).*zaproxy.*"
+]
+
+enable_guardduty                   = false
+enable_security_hub                = false
+enable_cloudtrail                  = false
+enable_aws_config                  = false
+enable_session_manager_preferences = false
+
+enable_vpc_endpoints                 = true
+enable_restrictive_endpoint_policies = false
+
+enable_vpc_flow_logs            = false
+enable_network_firewall_logging = false
+enable_waf_logging              = false
+
+create_log_s3_buckets = false
+
+allowed_egress_fqdns = [
+  ".amazonaws.com",
+  ".ecr.amazonaws.com",
+  ".ecr.aws",
+  ".eks.amazonaws.com",
+  ".compute.amazonaws.com",
+  "packages.us-east-1.amazonaws.com"
+]
+
+tags = {
+  project      = "dpn"
+  environment  = "test"
+  managed_by   = "opentofu"
+  data_class   = "participant"
+  architecture = "dsi-reference-test"
+}
+
+irsa_service_accounts = {
+  external-secrets = {
+    namespace       = "external-secrets"
+    service_account = "external-secrets-sa"
+
+    policy_json = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:dpn/test/*"
+    }
+  ]
+}
+POLICY
+  }
+}
+
+db_admin_secret_name = "dpn/test/postgres/admin"
+
+data_bucket_name                               = "dpn-test-794386801111-eu-west-2-data"
+data_bucket_force_destroy                      = false
+data_bucket_noncurrent_version_expiration_days = 90
+application_namespace                          = "applications"
+alb_controller_chart_version                   = "1.14.0"
+alb_controller_image_tag                       = "v2.14.0"
+enable_kubernetes_platform                     = false

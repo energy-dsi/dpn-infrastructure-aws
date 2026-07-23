@@ -1,6 +1,4 @@
-# ========================================
-# Core Variables
-# ========================================
+
 
 variable "project_name" {
   description = "Project short name used in naming conventions"
@@ -24,9 +22,6 @@ variable "tags" {
   default     = {}
 }
 
-# ========================================
-# Networking Variables
-# ========================================
 
 variable "vpc_cidr" {
   description = "VPC CIDR block"
@@ -58,13 +53,12 @@ variable "allowed_egress_fqdns" {
     ".ecr.amazonaws.com",
     ".ecr.aws",
     ".eks.amazonaws.com",
+    ".compute.amazonaws.com",
     "packages.us-east-1.amazonaws.com"
   ]
 }
 
-# ========================================
-# EKS Variables
-# ========================================
+
 
 variable "cluster_name" {
   description = "EKS cluster name"
@@ -99,6 +93,29 @@ variable "cluster_log_types" {
   description = "EKS control plane log types"
   type        = list(string)
   default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+}
+
+variable "eks_authentication_mode" {
+  description = "EKS authentication mode. API_AND_CONFIG_MAP allows EKS Access Entries while preserving aws-auth compatibility."
+  type        = string
+  default     = "API_AND_CONFIG_MAP"
+}
+
+variable "eks_bootstrap_cluster_creator_admin_permissions" {
+  description = "Grant temporary cluster admin permissions to the principal creating the EKS cluster."
+  type        = bool
+  default     = true
+}
+
+variable "eks_access_entries" {
+  description = "EKS access entries for human IAM/SSO principals."
+  type = map(object({
+    principal_arn     = string
+    policy_arn        = string
+    access_scope_type = string
+    namespaces        = optional(list(string))
+  }))
+  default = {}
 }
 
 variable "system_node_group_name" {
@@ -161,9 +178,7 @@ variable "workload_node_group_max_size" {
   default     = 12
 }
 
-# ========================================
-# Ingress and WAF
-# ========================================
+
 
 variable "domain_name" {
   description = "FQDN used by ACM certificate and ingress endpoint"
@@ -203,6 +218,11 @@ variable "waf_allowed_http_methods" {
   type        = list(string)
   default     = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 }
+variable "create_nlb_eips" {
+  description = "Create static Elastic IPs for internet-facing NLBs."
+  type        = bool
+  default     = false
+}
 
 variable "waf_blocked_user_agent_regexes" {
   description = "Regex patterns for malicious user agents blocked by WAF custom rule"
@@ -218,9 +238,7 @@ variable "waf_blocked_user_agent_regexes" {
   ]
 }
 
-# ========================================
-# Database Variables
-# ========================================
+
 
 variable "db_name" {
   description = "RDS PostgreSQL database name"
@@ -258,15 +276,37 @@ variable "db_admin_username" {
   default     = "dpnadmin"
 }
 
+variable "db_admin_secret_name" {
+  description = "AWS Secrets Manager secret name for the generated RDS PostgreSQL administrator credentials"
+  type        = string
+  default     = ""
+}
+
 variable "backup_retention_days" {
   description = "RDS backup retention in days"
   type        = number
   default     = 35
 }
 
-# ========================================
-# ECR and Logging Variables
-# ========================================
+
+
+variable "data_bucket_name" {
+  description = "Private encrypted S3 bucket for DPN participant/application data. No workload access is granted by default."
+  type        = string
+}
+
+variable "data_bucket_force_destroy" {
+  description = "Allow force destroy of the data bucket. Keep false for normal environments."
+  type        = bool
+  default     = false
+}
+
+variable "data_bucket_noncurrent_version_expiration_days" {
+  description = "Number of days before noncurrent object versions expire."
+  type        = number
+  default     = 90
+}
+
 
 variable "ecr_image_tag_mutability" {
   description = "ECR image tag mutability setting"
@@ -303,6 +343,25 @@ variable "enable_restrictive_endpoint_policies" {
   type        = bool
   default     = true
 }
+
+variable "enable_vpc_flow_logs" {
+  description = "Enable VPC flow logging resources"
+  type        = bool
+  default     = true
+}
+
+variable "enable_network_firewall_logging" {
+  description = "Enable AWS Network Firewall logging configuration"
+  type        = bool
+  default     = true
+}
+
+variable "enable_waf_logging" {
+  description = "Enable WAF logging configuration"
+  type        = bool
+  default     = true
+}
+
 
 variable "enable_guardduty" {
   description = "Enable Amazon GuardDuty detector"
@@ -352,9 +411,7 @@ variable "ssm_run_as_default_user" {
   default     = "ssm-user"
 }
 
-# ========================================
-# IRSA Variables
-# ========================================
+
 
 variable "irsa_service_accounts" {
   description = "IRSA role map keyed by role short name"
@@ -364,4 +421,76 @@ variable "irsa_service_accounts" {
     policy_json     = string
   }))
   default = {}
+}
+variable "use_existing_vpc" {
+  description = "Use an existing VPC instead of creating a new one"
+  type        = bool
+  default     = false
+}
+
+variable "existing_vpc_id" {
+  description = "Existing VPC ID when use_existing_vpc is enabled"
+  type        = string
+  default     = null
+}
+
+variable "create_igw" {
+  description = "Create Internet Gateway"
+  type        = bool
+  default     = true
+}
+
+variable "create_nat" {
+  description = "Create NAT Gateways"
+  type        = bool
+  default     = true
+}
+
+variable "transit_gateway_id" {
+  description = "Transit Gateway used for application subnet egress"
+  type        = string
+  default     = null
+}
+variable "application_namespace" {
+  description = "Default namespace for application workloads"
+  type        = string
+  default     = "applications"
+}
+
+variable "alb_controller_chart_version" {
+  description = "AWS Load Balancer Controller Helm chart version"
+  type        = string
+  default     = "1.14.0"
+}
+
+variable "alb_controller_image_tag" {
+  description = "AWS Load Balancer Controller image tag"
+  type        = string
+  default     = "v2.14.0"
+}
+
+variable "enable_kubernetes_platform" {
+  description = "Enable Kubernetes namespace and Helm platform resources. Requires network access to private EKS API."
+  type        = bool
+  default     = false
+}
+
+variable "application_secret_arns" {
+  description = "Secrets Manager ARNs the application service account can read."
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "application_bucket_name" {
+  description = "Application S3 bucket name"
+  type        = string
+}
+variable "enable_cloudwatch_observability" {
+  type    = bool
+  default = true
+}
+variable "enable_efs_csi_driver" {
+  description = "Enable the Amazon EFS CSI driver."
+  type        = bool
+  default     = true
 }

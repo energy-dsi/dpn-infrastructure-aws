@@ -48,7 +48,7 @@ output "backend_config" {
   description = "Backend configuration block to add to main infrastructure"
   value = {
     bucket         = aws_s3_bucket.tfstate.id
-    key            = "part/terraform.tfstate"
+    key            = "${var.environment}/terraform.tfstate"
     region         = aws_s3_bucket.tfstate.region
     dynamodb_table = aws_dynamodb_table.tfstate_lock.name
     encrypt        = true
@@ -58,11 +58,11 @@ output "backend_config" {
 
 output "backend_config_hcl" {
   description = "HCL snippet for backend configuration in main infrastructure"
-  value = <<-EOT
+  value       = <<-EOT
     terraform {
       backend "s3" {
         bucket         = "${aws_s3_bucket.tfstate.id}"
-        key            = "part/terraform.tfstate"
+        key            = "${var.environment}/terraform.tfstate"
         region         = "${aws_s3_bucket.tfstate.region}"
         dynamodb_table = "${aws_dynamodb_table.tfstate_lock.name}"
         encrypt        = true
@@ -92,10 +92,10 @@ output "deployment_summary" {
       logging    = "Enabled"
     }
     state_locking = {
-      table                   = aws_dynamodb_table.tfstate_lock.name
-      billing_mode            = "On-Demand"
-      point_in_time_recovery  = "Enabled"
-      encryption              = "AWS KMS"
+      table                  = aws_dynamodb_table.tfstate_lock.name
+      billing_mode           = "On-Demand"
+      point_in_time_recovery = "Enabled"
+      encryption             = "AWS KMS"
     }
     audit = {
       cloudwatch_log_group = aws_cloudwatch_log_group.tfstate_audit.name

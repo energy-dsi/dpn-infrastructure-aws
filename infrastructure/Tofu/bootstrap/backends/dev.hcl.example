@@ -1,0 +1,9 @@
+# Optional backend config for bootstrap after first local apply/import.
+# Bootstrap usually starts with local state, then can be migrated to S3 if required.
+
+bucket         = "<YOUR-TF-STATE-BUCKET>"
+key            = "<YOUR-TF-STATE-FILE-IN-BUCKET>"
+region         = "eu-west-2"
+dynamodb_table = "<YOUR-DYNAMODB-TABLE-WITH-TF-STATE>"
+encrypt        = true
+kms_key_id = "<YOUR-KMS-KEY-ID>"

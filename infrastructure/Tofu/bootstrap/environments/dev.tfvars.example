@@ -1,0 +1,19 @@
+aws_region = "eu-west-2"
+
+project_name = "dpn"
+environment  = "dev"
+
+tfstate_bucket_name    = "<YOUR-TF-STATE-BUCKET>"
+tfstate_dynamodb_table = "<YOUR-DYNAMODB-TABLE-WITH-TF-STATE>"
+
+enable_cloudtrail_audit      = true
+log_retention_days           = 30
+enable_mfa_delete            = false
+kms_key_deletion_window_days = 7
+
+tags = {
+  Owner      = "<OWNER>"
+  CostCenter = "<COST-CENTER>"
+  Compliance = "DEV"
+  DataClass  = "Internal-Dev"
+}

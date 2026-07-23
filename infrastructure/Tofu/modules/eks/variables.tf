@@ -78,3 +78,30 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "authentication_mode" {
+  type    = string
+  default = "API_AND_CONFIG_MAP"
+}
+variable "bootstrap_cluster_creator_admin_permissions" {
+  type    = bool
+  default = true
+}
+variable "access_entries" {
+  type = map(object({
+    principal_arn     = string
+    policy_arn        = string
+    access_scope_type = string
+    namespaces        = optional(list(string))
+  }))
+  default = {}
+}
+variable "enable_cloudwatch_observability" {
+  type    = bool
+  default = true
+}
+variable "enable_efs_csi_driver" {
+  description = "Enable Amazon EFS CSI Driver"
+  type        = bool
+  default     = false
+}

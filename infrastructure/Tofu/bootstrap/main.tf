@@ -29,11 +29,12 @@ provider "aws" {
       Environment = var.environment
       Project     = var.project_name
       ManagedBy   = "OpenTofu"
-      CreatedAt   = timestamp()
-      Bootstrap   = true
+      Bootstrap   = "true"
     }
   }
 }
+
+data "aws_caller_identity" "current" {}
 
 # ==============================================================================
 # KMS Key for S3 Encryption
@@ -113,11 +114,11 @@ resource "aws_s3_bucket_policy" "tfstate_enforce_encryption" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "DenyUnencryptedObjectUploads"
-        Effect = "Deny"
+        Sid       = "DenyUnencryptedObjectUploads"
+        Effect    = "Deny"
         Principal = "*"
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.tfstate.arn}/*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.tfstate.arn}/*"
         Condition = {
           StringNotEquals = {
             "s3:x-amz-server-side-encryption" = "aws:kms"
@@ -125,11 +126,11 @@ resource "aws_s3_bucket_policy" "tfstate_enforce_encryption" {
         }
       },
       {
-        Sid    = "DenyIncorrectKmsKey"
-        Effect = "Deny"
+        Sid       = "DenyIncorrectKmsKey"
+        Effect    = "Deny"
         Principal = "*"
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.tfstate.arn}/*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.tfstate.arn}/*"
         Condition = {
           StringNotEquals = {
             "s3:x-amz-server-side-encryption-aws-kms-key-id" = aws_kms_key.tfstate.arn
@@ -137,10 +138,10 @@ resource "aws_s3_bucket_policy" "tfstate_enforce_encryption" {
         }
       },
       {
-        Sid    = "DenyInsecureTransport"
-        Effect = "Deny"
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
         Principal = "*"
-        Action = "s3:*"
+        Action    = "s3:*"
         Resource = [
           aws_s3_bucket.tfstate.arn,
           "${aws_s3_bucket.tfstate.arn}/*"
@@ -263,13 +264,13 @@ resource "aws_cloudwatch_log_group" "tfstate_audit" {
 # CloudTrail for Audit Logging (Optional)
 # ==============================================================================
 resource "aws_cloudtrail" "tfstate" {
-  count                          = var.enable_cloudtrail_audit ? 1 : 0
-  name                           = "${var.project_name}-tfstate-trail"
-  s3_bucket_name                 = aws_s3_bucket.tfstate_audit[0].id
-  include_global_service_events  = true
-  is_multi_region_trail          = true
-  enable_log_file_validation     = true
-  depends_on                     = [aws_s3_bucket_policy.tfstate_audit[0]]
+  count                         = var.enable_cloudtrail_audit ? 1 : 0
+  name                          = "${var.project_name}-tfstate-trail"
+  s3_bucket_name                = aws_s3_bucket.tfstate_audit[0].id
+  include_global_service_events = true
+  is_multi_region_trail         = true
+  enable_log_file_validation    = true
+  depends_on                    = [aws_s3_bucket_policy.tfstate_audit[0]]
 
   event_selector {
     read_write_type           = "All"
@@ -281,8 +282,10 @@ resource "aws_cloudtrail" "tfstate" {
     }
 
     data_resource {
-      type   = "AWS::DynamoDB::Table"
-      values = ["arn:aws:dynamodb:${var.aws_region}:*:table/${var.tfstate_dynamodb_table}"]
+      type = "AWS::DynamoDB::Table"
+      values = [
+        "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.tfstate_dynamodb_table}"
+      ]
     }
   }
 }

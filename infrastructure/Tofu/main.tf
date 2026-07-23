@@ -1,24 +1,15 @@
-# ==============================================================================
-# DPN AWS EKS Production Infrastructure
-# ==============================================================================
-# This stack deploys a production-grade AWS baseline that mirrors the
-# Azure folder/module pattern in this repository.
-#
-# Highlights:
-# - Multi-AZ VPC with tiered subnets (public, app, data, fw, tgw, mgmt)
-# - Egress control path: App -> TGW -> Network Firewall -> NAT -> IGW
-# - EKS private endpoint cluster with managed node groups
-# - WAF + ALB ingress baseline
-# - KMS, ECR, RDS, S3 log sinks, CloudWatch log groups, IRSA roles
-# ==============================================================================
+
 
 module "security" {
   source = "./modules/security"
 
-  project_name = var.project_name
-  environment  = var.environment
-  aws_region   = var.aws_region
-  tags         = var.tags
+  project_name                   = var.project_name
+  environment                    = var.environment
+  aws_region                     = var.aws_region
+  tags                           = var.tags
+  enable_s3_malware_protection   = true
+  malware_protection_bucket_name = var.application_bucket_name
+
 }
 
 module "observability" {
@@ -28,7 +19,7 @@ module "observability" {
   environment           = var.environment
   log_retention_in_days = var.log_retention_in_days
   kms_key_arn           = module.security.kms_key_arn
-  create_log_s3_buckets = var.create_log_s3_buckets
+  create_log_s3_buckets = false
   tags                  = var.tags
 }
 
@@ -42,41 +33,46 @@ module "networking" {
   azs                                  = var.azs
   subnet_cidrs                         = var.subnet_cidrs
   allowed_egress_fqdns                 = var.allowed_egress_fqdns
-  enable_vpc_endpoints                 = var.enable_vpc_endpoints
-  enable_restrictive_endpoint_policies = var.enable_restrictive_endpoint_policies
-  vpc_flow_log_group_arn               = module.observability.vpc_flow_log_group_arn
-  firewall_flow_log_group_arn          = module.observability.firewall_flow_log_group_arn
-  firewall_alert_log_group_arn         = module.observability.firewall_alert_log_group_arn
-  tags                                 = var.tags
-}
+  enable_vpc_endpoints                 = true
+  enable_restrictive_endpoint_policies = false
+  enable_vpc_flow_logs                 = true
+  enable_network_firewall_logging      = true
 
-module "container_registry" {
-  source = "./modules/container_registry"
+  vpc_flow_log_group_arn       = module.observability.vpc_flow_log_group_arn
+  firewall_flow_log_group_arn  = module.observability.firewall_flow_log_group_arn
+  firewall_alert_log_group_arn = module.observability.firewall_alert_log_group_arn
 
-  project_name         = var.project_name
-  environment          = var.environment
-  kms_key_arn          = module.security.kms_key_arn
-  image_tag_mutability = var.ecr_image_tag_mutability
-  scan_on_push         = var.ecr_scan_on_push
-  tags                 = var.tags
+  use_existing_vpc   = var.use_existing_vpc
+  existing_vpc_id    = var.existing_vpc_id
+  create_igw         = var.create_igw
+  create_nat         = var.create_nat
+  transit_gateway_id = var.transit_gateway_id
+  create_nlb_eips    = var.create_nlb_eips
+
+  tags = var.tags
 }
 
 module "eks" {
   source = "./modules/eks"
 
-  project_name                 = var.project_name
-  environment                  = var.environment
-  cluster_name                 = var.cluster_name
-  kubernetes_version           = var.kubernetes_version
-  private_subnet_ids           = module.networking.application_subnet_ids
-  node_security_group_id       = module.networking.node_security_group_id
-  cluster_role_arn             = module.security.eks_cluster_role_arn
-  node_role_arn                = module.security.eks_node_role_arn
-  kms_key_arn                  = module.security.kms_key_arn
-  endpoint_private_access      = var.endpoint_private_access
-  endpoint_public_access       = var.endpoint_public_access
-  endpoint_public_access_cidrs = var.endpoint_public_access_cidrs
-  cluster_log_types            = var.cluster_log_types
+  project_name                                = var.project_name
+  environment                                 = var.environment
+  cluster_name                                = var.cluster_name
+  kubernetes_version                          = var.kubernetes_version
+  private_subnet_ids                          = module.networking.application_subnet_ids
+  node_security_group_id                      = module.networking.node_security_group_id
+  cluster_role_arn                            = module.security.eks_cluster_role_arn
+  node_role_arn                               = module.security.eks_node_role_arn
+  kms_key_arn                                 = module.security.kms_key_arn
+  endpoint_private_access                     = var.endpoint_private_access
+  endpoint_public_access                      = var.endpoint_public_access
+  endpoint_public_access_cidrs                = var.endpoint_public_access_cidrs
+  cluster_log_types                           = var.cluster_log_types
+  authentication_mode                         = var.eks_authentication_mode
+  bootstrap_cluster_creator_admin_permissions = var.eks_bootstrap_cluster_creator_admin_permissions
+  access_entries                              = var.eks_access_entries
+  enable_cloudwatch_observability             = var.enable_cloudwatch_observability
+  enable_efs_csi_driver                       = var.enable_efs_csi_driver
 
   system_node_group = {
     name           = var.system_node_group_name
@@ -94,76 +90,175 @@ module "eks" {
     max_size       = var.workload_node_group_max_size
   }
 
-  depends_on = [module.networking, module.security]
+  depends_on = [
+    module.networking,
+    module.security,
+    module.observability
+  ]
 }
 
-module "ingress" {
-  source = "./modules/ingress"
 
-  project_name                   = var.project_name
-  environment                    = var.environment
-  vpc_id                         = module.networking.vpc_id
-  public_subnet_ids              = module.networking.public_subnet_ids
-  alb_security_group_id          = module.networking.alb_security_group_id
-  domain_name                    = var.domain_name
-  ingress_hostname               = var.ingress_hostname
-  route53_zone_id                = var.route53_zone_id
-  enable_waf                     = var.enable_waf
-  waf_rate_limit                 = var.waf_rate_limit
-  blocked_country_codes          = var.blocked_country_codes
-  waf_allowed_http_methods       = var.waf_allowed_http_methods
-  waf_blocked_user_agent_regexes = var.waf_blocked_user_agent_regexes
-  alb_logs_bucket_name           = module.observability.alb_logs_bucket_name
-  waf_log_group_arn              = module.observability.waf_log_group_arn
-  tags                           = var.tags
+module "container_registry" {
+  source = "./modules/container_registry"
+
+  project_name = var.project_name
+  environment  = var.environment
+  kms_key_arn  = module.security.kms_key_arn
+
+  image_tag_mutability = "IMMUTABLE"
+  scan_on_push         = true
+
+  tags = var.tags
+
+  depends_on = [
+    module.security
+  ]
 }
 
-module "compliance" {
-  source = "./modules/compliance"
 
-  project_name                       = var.project_name
-  environment                        = var.environment
-  aws_region                         = var.aws_region
-  kms_key_arn                        = module.security.kms_key_arn
-  enable_guardduty                   = var.enable_guardduty
-  enable_security_hub                = var.enable_security_hub
-  enable_cloudtrail                  = var.enable_cloudtrail
-  enable_aws_config                  = var.enable_aws_config
-  enable_session_manager_preferences = var.enable_session_manager_preferences
-  ssm_sessions_log_group_name        = module.observability.ssm_sessions_log_group_name
-  ssm_logs_bucket_name               = module.observability.ssm_logs_bucket_name
-  ssm_idle_session_timeout_minutes   = var.ssm_idle_session_timeout_minutes
-  ssm_max_session_duration_minutes   = var.ssm_max_session_duration_minutes
-  ssm_run_as_default_user            = var.ssm_run_as_default_user
-  tags                               = var.tags
+module "storage" {
+  source = "./modules/storage"
+
+  bucket_name             = var.data_bucket_name
+  application_bucket_name = var.application_bucket_name
+
+  kms_key_arn = module.security.kms_key_arn
+
+  force_destroy                      = false
+  noncurrent_version_expiration_days = 90
+
+  tags = var.tags
+
+  depends_on = [
+    module.security
+  ]
 }
 
-module "database" {
-  source = "./modules/database"
+module "management_host" {
+  source = "./modules/management_host"
 
-  project_name               = var.project_name
-  environment                = var.environment
-  private_subnet_ids         = module.networking.data_subnet_ids
-  database_security_group_id = module.networking.data_security_group_id
-  kms_key_arn                = module.security.kms_key_arn
-  db_name                    = var.db_name
-  db_engine_version          = var.db_engine_version
-  db_instance_class          = var.db_instance_class
-  db_allocated_storage       = var.db_allocated_storage
-  db_max_allocated_storage   = var.db_max_allocated_storage
-  db_admin_username          = var.db_admin_username
-  backup_retention_days      = var.backup_retention_days
-  tags                       = var.tags
+  project_name     = var.project_name
+  environment      = var.environment
+  aws_region       = var.aws_region
+  data_bucket_name = var.data_bucket_name
+  kms_key_arn      = module.security.kms_key_arn
+
+  vpc_id    = module.networking.vpc_id
+  subnet_id = module.networking.application_subnet_ids[0]
+
+  cluster_name = module.eks.cluster_name
+
+  tags = var.tags
+
+  depends_on = [
+    module.eks,
+    module.networking
+  ]
 }
 
-module "workload_identity" {
-  source = "./modules/workload_identity"
+
+resource "aws_vpc_security_group_ingress_rule" "management_host_to_eks_api" {
+  description                  = "Allow management host to reach private EKS API endpoint"
+  security_group_id            = module.eks.cluster_security_group_id
+  referenced_security_group_id = module.management_host.security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+}
+
+resource "aws_vpc_security_group_ingress_rule" "eks_cluster_sg_nlb_ip_mode_http_from_vpc" {
+  security_group_id = module.eks.cluster_security_group_id
+
+  description = "Allow NLB IP-mode HTTP traffic from VPC"
+  ip_protocol = "tcp"
+  from_port   = 80
+  to_port     = 80
+  cidr_ipv4   = var.vpc_cidr
+}
+
+resource "aws_vpc_security_group_ingress_rule" "eks_cluster_sg_nlb_ip_mode_https_from_vpc" {
+  security_group_id = module.eks.cluster_security_group_id
+
+  description = "Allow NLB IP-mode HTTPS traffic from VPC"
+  ip_protocol = "tcp"
+  from_port   = 443
+  to_port     = 443
+  cidr_ipv4   = var.vpc_cidr
+}
+
+resource "aws_vpc_security_group_ingress_rule" "eks_cluster_sg_nodeport_from_vpc" {
+  security_group_id = module.eks.cluster_security_group_id
+
+  description = "Allow NLB instance-mode NodePort traffic from VPC"
+  ip_protocol = "tcp"
+  from_port   = 30000
+  to_port     = 32767
+  cidr_ipv4   = var.vpc_cidr
+}
+
+module "aws_load_balancer_controller_irsa" {
+  source = "./modules/aws_load_balancer_controller_irsa"
 
   project_name      = var.project_name
   environment       = var.environment
+  aws_region        = var.aws_region
+  cluster_name      = module.eks.cluster_name
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_issuer_url   = module.eks.oidc_issuer_url
-  service_accounts  = var.irsa_service_accounts
+  tags              = var.tags
 
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks
+  ]
+}
+module "kubernetes_platform" {
+  count  = var.enable_kubernetes_platform ? 1 : 0
+  source = "./modules/kubernetes_platform"
+
+  application_namespace        = var.application_namespace
+  cluster_name                 = module.eks.cluster_name
+  aws_region                   = var.aws_region
+  vpc_id                       = module.networking.vpc_id
+  alb_controller_role_arn      = module.aws_load_balancer_controller_irsa.iam_role_arn
+  alb_controller_chart_version = var.alb_controller_chart_version
+  alb_controller_image_tag     = var.alb_controller_image_tag
+  tags                         = var.tags
+
+  depends_on = [
+    module.eks,
+    module.aws_load_balancer_controller_irsa,
+    aws_vpc_security_group_ingress_rule.management_host_to_eks_api
+  ]
+}
+
+module "app_irsa" {
+  source = "./modules/app_irsa"
+
+  project_name           = var.project_name
+  environment            = var.environment
+  oidc_provider_arn      = module.eks.oidc_provider_arn
+  oidc_provider_url      = module.eks.oidc_issuer_url
+  application_bucket_arn = module.storage.application_bucket_arn
+  secret_arns            = var.application_secret_arns
+
+  tags = var.tags
+}
+
+module "efs" {
+  source = "./modules/efs"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  vpc_id     = module.networking.vpc_id
+  subnet_ids = module.networking.application_subnet_ids
+
+  node_security_group_id = module.eks.cluster_security_group_id
+
+  kms_key_arn = module.security.kms_key_arn
+  tags        = var.tags
+  depends_on = [
+    module.networking,
+    module.security
+  ]
 }
