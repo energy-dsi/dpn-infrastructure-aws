@@ -27,8 +27,8 @@ The current platform includes:
 
 ## Environments
 
-| DEV | `Account-ID` | `eu-west-2` |
-| TEST | `Account-ID` | `eu-west-2` |
+| DEV | <YOUR-AWS-DEV-ACCOUNT> | `eu-west-2` |
+| TEST | <YOUR-AWS-DEV-ACCOUNT> | `eu-west-2` |
 
 ## Repository layout
 

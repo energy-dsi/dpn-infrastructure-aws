@@ -35,7 +35,7 @@ This baseline implements the core pathing and controls from the target architect
 ## Quick Start
 
 1. Set backend configuration in `backend.tf` or via `-backend-config`.
-2. Update `environments/part.tfvars` with your environment values.
+2. Create `environments/part.tfvars` out of `environments/part.tfvars` with your environment values.
 3. Run:
 
 ```bash

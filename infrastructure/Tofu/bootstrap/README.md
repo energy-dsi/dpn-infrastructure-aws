@@ -143,7 +143,7 @@ tofu apply -var-file=environments/part.tfvars
 
 ### Customize for Your Environment
 
-Edit `environments/part.tfvars`:
+Create `environments/part.tfvars` out of `environments/part.tfvars.example`. Here are the suggested values for the variables placeholders:
 
 ```hcl
 # AWS Region
