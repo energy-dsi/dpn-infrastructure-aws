@@ -1,0 +1,31 @@
+# OpenTofu/Terraform runtime files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars.json
+
+# Local parameter overrides
+*.auto.tfvars
+*.auto.tfvars.json
+*.local.tfvars
+*.local.hcl
+.env
+.env.*
+
+# Keep provider lock files committed
+!.terraform.lock.hcl
+
+# Kubernetes and credentials
+kubeconfig
+*.kubeconfig
+*.pem
+*.key
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
