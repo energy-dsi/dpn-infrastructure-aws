@@ -1,3 +1,14 @@
+# License 
+
+## Copyright Notice  
+
+Copyright 2026 National Energy System Operator (NESO) and the Crown.  This work is licensed under the Open Government Licence 3.0 (OGL). This work has been developed by NESO using content licensed by the Department for Business and Trade (UK) under the OGL.   
+
+This work is licensed under the Apache License, Version 2.0.  
+
+**Note:** All documentation in this repository is licensed under the Open Government Licence v3.0 (OGL-3.0). See [OGL_LICENSE.md](OGL_LICENSE.md) for full terms.
+
+---
 
                                  Apache License
                            Version 2.0, January 2004
@@ -188,6 +199,8 @@
       identification within third-party archives.
 
    Copyright [yyyy] [name of copyright owner]
+
+   Copyright 2026 Crown Copyright, National Energy System Operator, legally attributed to the Department for Business and Trade (UK)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

@@ -124,10 +124,39 @@ rg -n '(AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN .*PRIVATE KEY-----|[0-9]{12}|arn:aws:i
 
 Expected documentation-only account IDs and example ARNs should be reviewed manually.
 
-## Security
+## Public Funding Acknowledgment
 
-Do not commit credentials, state files, plans, kubeconfig files, private keys, or production identifiers. See [SECURITY.md](SECURITY.md).
+This repository has been developed with public funding as part of the Data Sharing Infrastructure (DSI), a UK Government initiative. DSI, alongside its partners, has invested in this work to advance open, secure, and reusable digital twin technologies for any organisation, whether from the public or private sector, irrespective of size.
 
 ## License
 
-Licensed under the Apache License 2.0. See [LICENSE](LICENSE).
+This repository contains both source code and documentation, which are covered by different licenses:
+
+- **Code:** Licensed under the [Apache License 2.0](./LICENSE.md).
+- **Documentation:** Licensed under the [Open Government Licence v3.0 (OGL-UK-3.0)](./OGL_LICENSE.md).
+
+By contributing to this repository, you agree that your contributions will be licenced under these terms.
+
+## Security and Responsible Disclosure
+
+We take security seriously. If you believe you have found a security vulnerability in this repository, please follow our responsible disclosure process outlined in [SECURITY.md](./SECURITY.md).
+
+## Contributing
+
+We welcome contributions that align with the Programme's objectives.
+
+## Acknowledgements
+
+This repository has benefited from collaboration with various organisations.
+
+## Support and Contact
+
+"For questions or support, check our Issues or contact the DSI team on dsi@neso.energy"
+
+## Maintained by the National Energy System Operator (NESO)
+
+Copyright 2026 NESO and the Crown.  This work is licensed under the Open Government Licence 3.0 (OGL). This work has been developed by NESO using content licensed by the Department for Business and Trade (UK) under the OGL.   
+ 
+Licensed under the Open Government Licence v3.0.
+
+For full licensing terms, [OGL_LICENSE.md](./OGL_LICENSE.md)
