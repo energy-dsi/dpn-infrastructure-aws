@@ -25,19 +25,46 @@ Most optional security and platform integrations are disabled in the example con
 ## Repository layout
 
 ```text
-infrastructure/Tofu/
-├── bootstrap/                 # Remote-state resources
+.
+├── docs/                       # Prerequisites, deployment, and access guides
+│   ├── prerequisites.md
+│   ├── deployment.md
+│   └── access.md
+├── infrastructure/Tofu/
+│   ├── bootstrap/                 # Remote-state resources
+│   │   ├── environments/example.tfvars
+│   │   └── backends/example.hcl
+│   ├── backends/example.hcl       # Main stack backend configuration
 │   ├── environments/example.tfvars
-│   └── backends/example.hcl
-├── backends/example.hcl       # Main stack backend configuration
-├── environments/example.tfvars
-├── modules/                   # Reusable infrastructure modules
-├── scripts/deploy.sh          # Single-environment deployment helper
-├── main.tf
-├── providers.tf
-├── variables.tf
-└── outputs.tf
+│   ├── modules/                   # Reusable infrastructure modules
+│   ├── scripts/deploy.sh          # Single-environment deployment helper
+│   ├── main.tf
+│   ├── providers.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── CONTRIBUTING.md
+├── ACKNOWLEDGEMENTS.md
+├── CODE_OF_CONDUCT.md
+├── CHANGELOG.md
+├── MAINTAINERS.md
+├── SECURITY.md
+├── LICENSE.md
+├── OGL_LICENSE.md
+├── NOTICE.md
+└── README.md
 ```
+
+## Version requirements
+
+Tested with:
+
+- OpenTofu CLI `>= 1.8.0` (see `infrastructure/Tofu/providers.tf`)
+- AWS provider `~> 5.53`
+- Kubernetes provider `~> 2.33`
+- Helm provider `~> 2.15`
+- Amazon EKS Kubernetes version `1.35` in the example configuration (`kubernetes_version` in `environments/example.tfvars`)
+
+Confirm current Amazon EKS version support and add-on compatibility before changing `kubernetes_version`.
 
 ## Before you deploy
 
@@ -101,10 +128,25 @@ cd infrastructure/Tofu
 
 Review the generated plan carefully before applying it.
 
+### 4. Verify the deployment
+
+```bash
+aws eks update-kubeconfig \
+  --name "$(tofu output -raw eks_cluster_name)" \
+  --region "$AWS_REGION" \
+  --profile "$AWS_PROFILE"
+
+kubectl get nodes
+kubectl get pods -n kube-system
+kubectl get deployment -n platform aws-load-balancer-controller
+```
+
+If `enable_kubernetes_platform = false` (the example default), the last command will not return results yet — see [Enabling Kubernetes platform resources](docs/deployment.md#enabling-kubernetes-platform-resources). For private-endpoint access via the management host, see [Platform access](docs/access.md).
+
 ## Important design decisions to review
 
 - **VPC ownership:** the example creates a new VPC. Set `use_existing_vpc = true` only with a valid existing VPC ID.
-- **Egress:** `create_nat = false`. Provide Transit Gateway routing, VPC endpoints, or another approved outbound path before expecting private workloads to reach external services.
+- **Egress:** `create_nat = false` by default. **EKS managed node groups require outbound reachability to the EKS API, Amazon ECR, and AWS STS during node bootstrap.** Configure Transit Gateway routing, VPC endpoints, or another approved outbound path *before* running `tofu apply`, or node groups will fail to join the cluster.
 - **Ingress:** the example enables an Internet Gateway but does not enable static NLB EIPs. Adapt this to your ingress model.
 - **Private EKS API:** administration requires network reachability to the private endpoint, commonly through the management host or a connected enterprise network.
 - **DNS:** replace the example Route 53 values and confirm hosted-zone ownership.
@@ -119,7 +161,7 @@ Run these checks before publishing or deploying a modified copy:
 ```bash
 tofu fmt -check -recursive
 shellcheck infrastructure/Tofu/scripts/deploy.sh
-rg -n '(AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN .*PRIVATE KEY-----|[0-9]{12}|arn:aws:iam::' .
+rg -n '(AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN .*PRIVATE KEY-----|arn:(aws|aws-cn|aws-us-gov):[a-zA-Z0-9-]+:[a-zA-Z0-9-]*:[0-9]{12}:' .
 ```
 
 Expected documentation-only account IDs and example ARNs should be reviewed manually.
@@ -143,20 +185,20 @@ We take security seriously. If you believe you have found a security vulnerabili
 
 ## Contributing
 
-We welcome contributions that align with the Programme's objectives.
+We welcome contributions that align with the Programme's objectives. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the contribution model and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for expected behaviour.
 
 ## Acknowledgements
 
-This repository has benefited from collaboration with various organisations.
+This repository has benefited from collaboration with various organisations. See [ACKNOWLEDGEMENTS.md](./ACKNOWLEDGEMENTS.md) for details.
+
+## Maintainers and Release History
+
+See [MAINTAINERS.md](./MAINTAINERS.md) for current repository maintainers and [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## Support and Contact
 
-"For questions or support, check our Issues or contact the DSI team on dsi@neso.energy"
+For questions or support, check the repository [Issues](https://github.com/energy-dsi/dpn-infrastructure-aws/issues) or contact the DSI team at [dsi@neso.energy](mailto:dsi@neso.energy).
 
 ## Maintained by the National Energy System Operator (NESO)
 
-Copyright 2026 NESO and the Crown.  This work is licensed under the Open Government Licence 3.0 (OGL). This work has been developed by NESO using content licensed by the Department for Business and Trade (UK) under the OGL.   
- 
-Licensed under the Open Government Licence v3.0.
-
-For full licensing terms, [OGL_LICENSE.md](./OGL_LICENSE.md)
+Copyright 2026 NESO and the Crown. This work has been developed by NESO using content licensed by the Department for Business and Trade (UK) under the Open Government Licence v3.0 (OGL-UK-3.0). See [OGL_LICENSE.md](./OGL_LICENSE.md) for full terms.
